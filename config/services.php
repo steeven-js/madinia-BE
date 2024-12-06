@@ -34,5 +34,7 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'intercom' => [
+        'secret_key' => env('INTERCOM_SECRET_KEY'),
+    ],
 ];
