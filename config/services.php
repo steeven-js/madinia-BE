@@ -37,4 +37,9 @@ return [
     'intercom' => [
         'secret_key' => env('INTERCOM_SECRET_KEY'),
     ],
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'public' => env('STRIPE_PUBLIC'),
+        'webhook' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
 ];
