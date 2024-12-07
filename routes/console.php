@@ -31,5 +31,5 @@ Artisan::command('mail:test', function () {
         $this->error("Erreur lors de l'envoi : " . $e->getMessage());
     }
 })->purpose('Envoyer un email test en format Markdown')
-    ->hourly()
+    ->twiceDaily(1, 13)
     ->appendOutputTo(storage_path('logs/scheduler.log'));
