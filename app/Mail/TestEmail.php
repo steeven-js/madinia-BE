@@ -16,10 +16,7 @@ class TestEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address(
-                config('mail.from.address', 'test@example.com'),
-                config('mail.from.name', 'Test Sender')
-            ),
+            from: 'contact@madinia.fr',
             subject: 'Test Email - ' . config('app.name'),
         );
     }

@@ -4,20 +4,17 @@ use App\Mail\TestEmail;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule;
 
 // Commande inspire par défaut
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-// Commande pour l'envoi des emails planifiés
-Artisan::command('mail:test {email?}', function (string $email = null) {
-    $targetEmail = $email ?? config('mail.from.address');
-
+// Commande pour l'envoi des emails planifiés à une adresse spécifique
+Artisan::command('mail:test', function () {
     try {
-        Mail::to($targetEmail)->send(new TestEmail());
-        $this->info("Email test envoyé avec succès à : $targetEmail");
+        Mail::to('s.jacques@madin-ia.com')->send(new TestEmail());
+        $this->info("Email test envoyé avec succès à : s.jacques@madin-ia.com");
 
         // Afficher plus d'informations pour le débogage
         $this->line('Configuration utilisée :');
@@ -34,4 +31,5 @@ Artisan::command('mail:test {email?}', function (string $email = null) {
         $this->error("Erreur lors de l'envoi : " . $e->getMessage());
     }
 })->purpose('Envoyer un email test en format Markdown')
-->everyFiveMinutes()->appendOutputTo(storage_path('logs/scheduler.log'));
+    ->everyFiveMinutes()
+    ->appendOutputTo(storage_path('logs/scheduler.log'));
