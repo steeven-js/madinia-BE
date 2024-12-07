@@ -34,4 +34,4 @@ Artisan::command('mail:test {email?}', function (string $email = null) {
         $this->error("Erreur lors de l'envoi : " . $e->getMessage());
     }
 })->purpose('Envoyer un email test en format Markdown')
-->everyFiveMinutes(); // Ajout de la planification ici
+->everyFiveMinutes()->appendOutputTo(storage_path('logs/scheduler.log'));
