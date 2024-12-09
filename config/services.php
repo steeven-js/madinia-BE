@@ -42,4 +42,10 @@ return [
         'public' => env('STRIPE_PUBLIC'),
         'webhook' => env('STRIPE_WEBHOOK_SECRET'),
     ],
+    'bearer' => [
+        'token' => env('BEARER_TOKEN'),
+    ],
+    'bearer_cloud_token' => [
+        'token' => env('BEARER_CLOUD_TOKEN'),
+    ],
 ];
