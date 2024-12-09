@@ -33,7 +33,7 @@ class CheckEventCommand extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->cloudFunctionUrl = config('services.gcloud.event_function_url');
+        $this->cloudFunctionUrl = config('services.gcloud.event_function_url') . '?apiKey=' . config('services.gcloud.api_key');
     }
 
     public function handle()

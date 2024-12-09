@@ -57,6 +57,7 @@ return [
 
     'gcloud' => [
         'event_function_url' => env('GCLOUD_EVENT_FUNCTION_URL'),
+        'api_key' => env('GCLOUD_API_KEY'),
     ],
 
 ];
