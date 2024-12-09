@@ -55,4 +55,8 @@ return [
         'admin_address' => env('MAIL_ADMIN_ADDRESS'),
     ],
 
+    'gcloud' => [
+        'event_function_url' => env('GCLOUD_EVENT_FUNCTION_URL'),
+    ],
+
 ];
