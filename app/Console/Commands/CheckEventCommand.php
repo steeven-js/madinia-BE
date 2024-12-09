@@ -205,9 +205,6 @@ class CheckEventCommand extends Command
         return Http::withHeaders([
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
-            'Authorization' => 'Bearer ' . config('services.bearer_cloud_token'),
         ])->post($this->cloudFunctionUrl, $requestBody);
     }
-
-
 }
