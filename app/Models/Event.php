@@ -18,8 +18,9 @@ class Event extends Model
         'firebaseId',
         'title',
         'scheduled_date',
+        'status',
         'is_active',
-        'activated_at'
+        'last_updated',
     ];
 
     /**
@@ -30,6 +31,7 @@ class Event extends Model
     protected $casts = [
         'scheduled_date' => 'datetime',
         'activated_at' => 'datetime',
+        'last_updated' => 'datetime',
         'is_active' => 'boolean'
     ];
 }

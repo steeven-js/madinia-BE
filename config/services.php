@@ -34,18 +34,25 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+
     'intercom' => [
         'secret_key' => env('INTERCOM_SECRET_KEY'),
     ],
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
         'public' => env('STRIPE_PUBLIC'),
         'webhook' => env('STRIPE_WEBHOOK_SECRET'),
     ],
-    'bearer' => [
-        'token' => env('BEARER_TOKEN'),
+
+    'bearer' => env('BEARER_TOKEN'),
+
+    'bearer_cloud_token' => env('BEARER_CLOUD_TOKEN'),
+
+    'madinia_url' => env('MADINIA_URL'),
+
+    'mail' => [
+        'admin_address' => env('MAIL_ADMIN_ADDRESS'),
     ],
-    'bearer_cloud_token' => [
-        'token' => env('BEARER_CLOUD_TOKEN'),
-    ],
+
 ];

@@ -5,7 +5,9 @@ namespace App\Console\Commands;
 use Carbon\Carbon;
 use App\Models\Event;
 use Illuminate\Console\Command;
+use App\Mail\EventStatusChangedMail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 class CheckEventCommand extends Command
 {
@@ -26,72 +28,110 @@ class CheckEventCommand extends Command
     /**
      * Execute the console command.
      */
+    private $cloudFunctionUrl = 'https://us-central1-madinia-admin.cloudfunctions.net/triggerEvent';
+
     public function handle()
     {
-        try {
-            // Configurer le fuseau horaire pour la Martinique (UTC-4)
-            date_default_timezone_set('America/Martinique');
+        $this->info('DEV - Début de la vérification des événements');
 
-            // Récupérer tous les événements à vérifier
-            $events = Event::where('status', '!=', 'past')->get();
+        $events = Event::where('scheduled_date', '<=', Carbon::now())
+            ->whereIn('status', ['pending', 'current'])
+            ->get();
 
-            foreach ($events as $event) {
-                $scheduledDate = Carbon::parse($event->scheduled_date);
-                $now = now();
+        $this->info('DEV - Nombre d\'événements à vérifier : ' . $events->count());
 
-                // Vérifier si l'événement doit être mis à jour
-                if ($this->shouldUpdateToCurrent($scheduledDate, $now)) {
-                    $this->updateEventStatus($event, true, 'current');
-                    $this->notifyCloudFunction($event->id);
-                } elseif ($this->shouldUpdateToPast($scheduledDate, $now)) {
-                    $this->updateEventStatus($event, false, 'past');
-                }
-            }
+        foreach ($events as $event) {
+            $this->processEvent($event);
+        }
 
-            $this->info('Vérification des événements terminée avec succès');
-            return 0;
+        $this->info('DEV - Vérification des événements terminée avec succès');
+    }
 
-        } catch (\Exception $e) {
-            $this->error('Une erreur est survenue : ' . $e->getMessage());
-            return 1;
+    private function processEvent(Event $event)
+    {
+        $this->info("DEV - Vérification de l'événement Firebase ID: {$event->firebaseId}");
+        $this->info("Date programmée: {$event->scheduled_date}");
+        $this->info("Status actuel: {$event->status}");
+
+        if ($this->shouldUpdateEvent($event)) {
+            $this->updateEvent($event);
+        } else {
+            $this->info("DEV - Aucun changement nécessaire pour l'événement {$event->firebaseId}");
         }
     }
 
-    private function shouldUpdateToCurrent(Carbon $scheduledDate, Carbon $now): bool
+    private function shouldUpdateEvent(Event $event): bool
     {
-        return $scheduledDate->format('Y-m-d H') === $now->format('Y-m-d H');
+        return $event->status === 'pending' &&
+            Carbon::parse($event->scheduled_date)->lte(Carbon::now());
     }
 
-    private function shouldUpdateToPast(Carbon $scheduledDate, Carbon $now): bool
+    private function updateEvent(Event $event)
     {
-        return $scheduledDate->addDay()->format('Y-m-d H') === $now->format('Y-m-d H');
-    }
+        $this->info("DEV - L'événement {$event->firebaseId} passe à CURRENT");
 
-    private function updateEventStatus(Event $event, bool $isActive, string $status): void
-    {
-        $event->update([
-            'is_active' => $isActive,
-            'status' => $status,
-            'last_updated' => now()
-        ]);
-    }
+        // Sauvegarder les anciennes valeurs
+        $oldValues = [
+            'is_active' => $event->is_active,
+            'status' => $event->status,
+            'last_updated' => $event->last_updated,
+        ];
 
-    private function notifyCloudFunction(string $eventId): void
-    {
+        // Nouvelles valeurs
+        $newValues = [
+            'is_active' => true,
+            'status' => 'current',
+            'last_updated' => Carbon::now(),
+        ];
+
+        // Afficher le tableau des changements
+        $this->info("DEV - Mise à jour de l'événement {$event->firebaseId}:");
+        $this->table(
+            ['Champ', 'Ancienne valeur', 'Nouvelle valeur'],
+            collect($newValues)->map(function ($newValue, $field) use ($oldValues) {
+                return [
+                    $field,
+                    $oldValues[$field] === true ? 'true' : ($oldValues[$field] === false ? 'false' : $oldValues[$field]),
+                    $newValue === true ? 'true' : ($newValue === false ? 'false' : $newValue),
+                ];
+            })->toArray()
+        );
+
         try {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Bearer ' . config('services.bearer_cloud_token')
-            ])->post('https://scheduleevent-641409071815.us-central1.run.app', [
-                'eventId' => $eventId
-            ]);
+            // Faire l'appel à la Cloud Function
+            $response = $this->callCloudFunction($event, $newValues);
 
-            if (!$response->successful()) {
-                throw new \Exception('Échec de la notification Cloud Function: ' . $response->body());
+            if ($response->successful()) {
+                // Mettre à jour la base de données locale
+                $event->update($newValues);
+                Mail::to(config('services.mail.admin_address'))->send(new EventStatusChangedMail($event));
+                $this->info("DEV - Mise à jour réussie pour l'événement {$event->firebaseId}");
+            } else {
+                $this->error("DEV - Erreur lors de l'appel à la Cloud Function: " . $response->status());
+                $this->error("DEV - Réponse: " . $response->body());
             }
         } catch (\Exception $e) {
-            $this->error('Erreur lors de la notification Cloud Function: ' . $e->getMessage());
+            $this->error("DEV - Exception lors de la mise à jour: " . $e->getMessage());
         }
+    }
+
+    private function callCloudFunction(Event $event, array $newValues)
+    {
+        $this->info("DEV - Appel de la Cloud Function pour l'événement {$event->firebaseId}");
+
+        $requestBody = [
+            'firebaseId' => $event->firebaseId,
+            'updates' => [
+                'status' => $newValues['status'],
+                'isActive' => $newValues['is_active'],
+                'lastUpdated' => $newValues['last_updated']->format('Y-m-d H:i:s'),
+            ]
+        ];
+
+        return Http::withHeaders([
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . config('services.bearer_cloud_token'),
+        ])->post($this->cloudFunctionUrl, $requestBody);
     }
 }

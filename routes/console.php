@@ -1,7 +1,12 @@
 <?php
 
+use Carbon\Carbon;
+use App\Models\Event;
 use App\Mail\TestEmail;
+use App\Mail\DailyEventsSummaryMail;
+use App\Mail\EventStatusChangedMail;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
 
@@ -13,10 +18,9 @@ Artisan::command('inspire', function () {
 // Commande pour l'envoi des emails planifiés à une adresse spécifique
 Artisan::command('mail:test', function () {
     try {
-        Mail::to('s.jacques@madin-ia.com')->send(new TestEmail());
-        $this->info("Email test envoyé avec succès à : s.jacques@madin-ia.com");
+        Mail::to(config('services.mail.admin_address'))->send(new TestEmail());
+        $this->info("Email test envoyé avec succès à : " . config('services.mail.admin_address'));
 
-        // Afficher plus d'informations pour le débogage
         $this->line('Configuration utilisée :');
         $this->table(
             ['Paramètre', 'Valeur'],

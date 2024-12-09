@@ -27,6 +27,7 @@ class UpdateEventRequest extends FormRequest
             'title' => ['string', 'max:255'],
             'scheduled_date' => ['date'],
             'is_active' => ['boolean'],
+            'status' => ['nullable', 'string', 'max:255'],
             'activated_at' => ['nullable', 'date']
         ];
     }
