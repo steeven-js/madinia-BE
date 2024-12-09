@@ -2,9 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\StripeEventController;
+use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\IntercomController;
 use App\Http\Controllers\Api\ContactMailController;
+use App\Http\Controllers\Api\StripeEventController;
 // use App\Http\Controllers\API\UserController;
 
 Route::get('/user', function (Request $request) {
@@ -17,6 +18,8 @@ Route::middleware('authApi')->group(function () {
     Route::post('stripe/create-event', [StripeEventController::class, 'createEvent']);
     Route::put('stripe/update-event/{id}', [StripeEventController::class, 'updateEvent']);
     Route::delete('stripe/delete-event/{id}', [StripeEventController::class, 'deleteEvent']);
+
+    Route::apiResource("events", EventController::class);
 });
 
 // Route::apiResource("users", UserController::class);
