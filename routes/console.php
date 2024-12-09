@@ -1,12 +1,7 @@
 <?php
 
-use Carbon\Carbon;
-use App\Models\Event;
 use App\Mail\TestEmail;
-use App\Mail\DailyEventsSummaryMail;
-use App\Mail\EventStatusChangedMail;
 use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
