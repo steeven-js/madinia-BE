@@ -205,6 +205,7 @@ class CheckEventCommand extends Command
         return Http::withHeaders([
             'Accept' => 'application/json',
             'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . config('services.gcloud.api_key')
         ])->post($this->cloudFunctionUrl, $requestBody);
     }
 }
