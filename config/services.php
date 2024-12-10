@@ -47,17 +47,10 @@ return [
 
     'bearer' => env('BEARER_TOKEN'),
 
-    'bearer_cloud_token' => env('BEARER_CLOUD_TOKEN'),
-
     'madinia_url' => env('MADINIA_URL'),
 
     'mail' => [
         'admin_address' => env('MAIL_ADMIN_ADDRESS'),
-    ],
-
-    'gcloud' => [
-        'event_function_url' => env('GCLOUD_EVENT_FUNCTION_URL'),
-        'api_key' => env('GCLOUD_API_KEY'),
     ],
 
 ];

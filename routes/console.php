@@ -4,7 +4,6 @@ use App\Mail\TestEmail;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule;
 
 // Commande inspire par défaut
 Artisan::command('inspire', function () {
@@ -32,8 +31,4 @@ Artisan::command('mail:test', function () {
     }
 })->purpose('Envoyer un email test en format Markdown')
     ->twiceDaily(1, 13)
-    ->appendOutputTo(storage_path('logs/scheduler.log'));
-
-Schedule::command('app:check-event-command')
-    ->everyThirtyMinutes()
     ->appendOutputTo(storage_path('logs/scheduler.log'));
