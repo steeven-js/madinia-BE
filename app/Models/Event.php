@@ -19,6 +19,7 @@ class Event extends Model
         'title',
         'scheduled_date',
         'status',
+        'price',
         'is_active',
         'last_updated',
     ];

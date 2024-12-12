@@ -25,6 +25,7 @@ class UpdateEventRequest extends FormRequest
         return [
             'firebaseId' => ['string', Rule::unique('events')->ignore($this->event)],
             'title' => ['string', 'max:255'],
+            'price' => ['numeric'],
             'scheduled_date' => ['date'],
             'is_active' => ['boolean'],
             'status' => ['nullable', 'string', 'max:255'],
