@@ -34,8 +34,11 @@ class EventController extends Controller
      */
     public function show(string $firebaseId): JsonResponse
     {
-        $event = Event::where('firebaseId', $firebaseId)->firstOrFail();
-        return response()->json($event);
+        $event = Event::where('firebaseId', $firebaseId)->first();
+        return response()->json([
+            'data' => $event,
+            'exists' => !is_null($event)
+        ]);
     }
 
     /**
@@ -43,9 +46,19 @@ class EventController extends Controller
      */
     public function update(UpdateEventRequest $request, string $firebaseId): JsonResponse
     {
-        $event = Event::where('firebaseId', $firebaseId)->firstOrFail();
+        $event = Event::where('firebaseId', $firebaseId)->first();
+        if (!$event) {
+            return response()->json([
+                'exists' => false,
+                'message' => 'Event not found'
+            ]);
+        }
+
         $event->update($request->validated());
-        return response()->json($event);
+        return response()->json([
+            'data' => $event,
+            'exists' => true
+        ]);
     }
 
     /**
@@ -53,8 +66,10 @@ class EventController extends Controller
      */
     public function destroy(string $firebaseId): JsonResponse
     {
-        $event = Event::where('firebaseId', $firebaseId)->firstOrFail();
-        $event->delete();
+        $event = Event::where('firebaseId', $firebaseId)->first();
+        if ($event) {
+            $event->delete();
+        }
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }
