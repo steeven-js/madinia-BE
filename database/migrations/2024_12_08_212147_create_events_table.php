@@ -18,8 +18,6 @@ return new class extends Migration
             $table->dateTime('scheduled_date');
             $table->boolean('is_active')->default(false);
             $table->dateTime('activated_at')->nullable();
-            $table->string('stripe_event_id')->nullable();
-            $table->string('stripe_price_id')->nullable();
             $table->timestamps();
         });
     }
