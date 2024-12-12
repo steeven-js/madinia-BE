@@ -15,9 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('firebaseId')->unique();
             $table->string('title');
-            $table->dateTime('scheduled_date');
+            $table->decimal('price', 10, 2)->nullable();
+            $table->datetime('scheduled_date');
+            $table->string('status')->default('draft');
+            $table->timestamp('last_updated')->nullable();
             $table->boolean('is_active')->default(false);
-            $table->dateTime('activated_at')->nullable();
+            $table->string('stripe_event_id')->nullable();
+            $table->string('stripe_price_id')->nullable();
+            $table->datetime('activated_at')->nullable();
             $table->timestamps();
         });
     }
