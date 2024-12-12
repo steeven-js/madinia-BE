@@ -25,12 +25,12 @@ class UpdateEventRequest extends FormRequest
         return [
             'firebaseId' => ['required', 'string'],
             'title' => ['required', 'string', 'max:255'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'scheduled_date' => ['required', 'date'],
             'status' => ['required', 'string', 'in:draft,pending,current,past,cancelled'],
-            'is_active' => ['required', 'boolean'],
-            'stripe_event_id' => ['required_with:price', 'nullable', 'string'],
-            'stripe_price_id' => ['required_with:price', 'nullable', 'string']
+            'is_active' => ['boolean'],
+            'stripe_event_id' => ['nullable', 'string'],
+            'stripe_price_id' => ['nullable', 'string']
         ];
     }
 

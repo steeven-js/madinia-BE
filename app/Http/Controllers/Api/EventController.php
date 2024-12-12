@@ -60,27 +60,34 @@ class EventController extends Controller
 
             Log::info('Update Event Request', [
                 'firebaseId' => $firebaseId,
-                'data' => $request->all(),
-                'validated' => $request->validated()
+                'request_data' => $request->all(),
+                'validated_data' => $request->validated()
             ]);
 
-            $event->update($request->validated());
+            $validated = $request->validated();
+
+            // Assurons-nous que les dates sont au bon format
+            if (isset($validated['scheduled_date'])) {
+                $validated['scheduled_date'] = date('Y-m-d H:i:s', strtotime($validated['scheduled_date']));
+            }
+
+            $event->update($validated);
 
             return response()->json([
-                'data' => $event,
+                'data' => $event->fresh(),
                 'exists' => true
             ]);
         } catch (\Exception $e) {
             Log::error('Event Update Error', [
+                'firebaseId' => $firebaseId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'message' => 'Update failed',
-                'error' => $e->getMessage(),
-                'validation_errors' => $request->validator()->errors()->all()
-            ], 422);
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

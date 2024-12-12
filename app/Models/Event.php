@@ -17,13 +17,13 @@ class Event extends Model
     protected $fillable = [
         'firebaseId',
         'title',
+        'price',
         'scheduled_date',
         'status',
-        'price',
         'is_active',
-        'last_updated',
-        'stripe_event_id',  // Ajouté
-        'stripe_price_id',  // Ajouté
+        'stripe_event_id',
+        'stripe_price_id',
+        'activated_at',
     ];
 
     /**
@@ -32,9 +32,9 @@ class Event extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'price' => 'decimal:2',
         'scheduled_date' => 'datetime',
         'activated_at' => 'datetime',
-        'last_updated' => 'datetime',
         'is_active' => 'boolean'
     ];
 }
