@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('firebaseId')->unique();
             $table->string('title');
-            $table->decimal('price', 10, 2);
             $table->dateTime('scheduled_date');
             $table->boolean('is_active')->default(false);
             $table->dateTime('activated_at')->nullable();
