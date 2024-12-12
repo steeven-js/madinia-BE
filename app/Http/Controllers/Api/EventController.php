@@ -54,11 +54,19 @@ class EventController extends Controller
             ]);
         }
 
-        $event->update($request->validated());
-        return response()->json([
-            'data' => $event,
-            'exists' => true
-        ]);
+        try {
+            $validatedData = $request->validated();
+            $event->update($validatedData);
+
+            return response()->json([
+                'data' => $event,
+                'exists' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 422);
+        }
     }
 
     /**

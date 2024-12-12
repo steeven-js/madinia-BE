@@ -22,6 +22,8 @@ class Event extends Model
         'price',
         'is_active',
         'last_updated',
+        'stripe_event_id',  // Ajouté
+        'stripe_price_id',  // Ajouté
     ];
 
     /**

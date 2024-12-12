@@ -25,11 +25,13 @@ class UpdateEventRequest extends FormRequest
         return [
             'firebaseId' => ['string', Rule::unique('events')->ignore($this->event)],
             'title' => ['string', 'max:255'],
-            'price' => ['nullable', 'numeric', 'min:0'], // Modifié
+            'price' => ['nullable', 'numeric', 'min:0'],
             'scheduled_date' => ['date'],
             'is_active' => ['boolean'],
             'status' => ['nullable', 'string', 'max:255'],
-            'activated_at' => ['nullable', 'date']
+            'activated_at' => ['nullable', 'date'],
+            'stripe_event_id' => ['nullable', 'string'],  // Ajouté
+            'stripe_price_id' => ['nullable', 'string'],  // Ajouté
         ];
     }
 }
