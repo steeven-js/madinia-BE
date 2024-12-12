@@ -18,14 +18,14 @@ class StripeEventController extends Controller
     public function createEvent(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'title' => 'required|string',  // Changé de 'name' à 'title'
             'price' => 'required|numeric',
         ]);
 
         try {
             // Créer un produit Stripe
             $event = Product::create([
-                'name' => $request->name,
+                'name' => $request->title,  // Utilisation de title
                 'type' => 'service',
             ]);
 
@@ -50,7 +50,7 @@ class StripeEventController extends Controller
     public function updateEvent(Request $request, $id)
     {
         $request->validate([
-            'title' => 'required|string', // Changé de 'name' à 'title'
+            'title' => 'required|string',  // Changé de 'name' à 'title'
             'price' => 'required|numeric',
         ]);
 
@@ -60,7 +60,7 @@ class StripeEventController extends Controller
             // Mettre à jour le produit
             $event = $stripe->products->update(
                 $id,
-                ['name' => $request->title] // Changé de name à title
+                ['name' => $request->title]  // Utilisation de title
             );
 
             // Récupérer le prix actuel
