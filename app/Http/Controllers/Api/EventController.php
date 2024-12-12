@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Event;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -46,27 +48,40 @@ class EventController extends Controller
      */
     public function update(UpdateEventRequest $request, string $firebaseId): JsonResponse
     {
-        $event = Event::where('firebaseId', $firebaseId)->first();
-        if (!$event) {
-            return response()->json([
-                'exists' => false,
-                'message' => 'Event not found'
-            ]);
-        }
-
         try {
-            $validatedData = $request->validated();
-            $event->update($validatedData);
+            $event = Event::where('firebaseId', $firebaseId)->first();
+            if (!$event) {
+                return response()->json([
+                    'exists' => false,
+                    'message' => 'Event not found'
+                ]);
+            }
+
+            $validated = $request->validated();
+            Log::info('Validated data:', $validated);  // Pour le debugging
+
+            $event->update($validated);
 
             return response()->json([
                 'data' => $event,
                 'exists' => true
             ]);
         } catch (\Exception $e) {
+            Log::error('Update error:', ['error' => $e->getMessage()]);
             return response()->json([
-                'error' => $e->getMessage()
+                'message' => 'Update failed',
+                'error' => $e->getMessage(),
+                'errors' => $this->getValidationErrors($e)
             ], 422);
         }
+    }
+
+    private function getValidationErrors(\Exception $e)
+    {
+        if ($e instanceof ValidationException) {
+            return $e->errors();
+        }
+        return null;
     }
 
     /**
