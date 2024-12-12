@@ -50,7 +50,7 @@ class StripeEventController extends Controller
     public function updateEvent(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string',
+            'title' => 'required|string', // Changé de 'name' à 'title'
             'price' => 'required|numeric',
         ]);
 
@@ -60,7 +60,7 @@ class StripeEventController extends Controller
             // Mettre à jour le produit
             $event = $stripe->products->update(
                 $id,
-                ['name' => $request->name]
+                ['name' => $request->title] // Changé de name à title
             );
 
             // Récupérer le prix actuel
