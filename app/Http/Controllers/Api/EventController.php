@@ -50,38 +50,38 @@ class EventController extends Controller
     {
         try {
             $event = Event::where('firebaseId', $firebaseId)->first();
+
             if (!$event) {
                 return response()->json([
                     'exists' => false,
                     'message' => 'Event not found'
-                ]);
+                ], 404);
             }
 
-            $validated = $request->validated();
-            Log::info('Validated data:', $validated);  // Pour le debugging
+            Log::info('Update Event Request', [
+                'firebaseId' => $firebaseId,
+                'data' => $request->all(),
+                'validated' => $request->validated()
+            ]);
 
-            $event->update($validated);
+            $event->update($request->validated());
 
             return response()->json([
                 'data' => $event,
                 'exists' => true
             ]);
         } catch (\Exception $e) {
-            Log::error('Update error:', ['error' => $e->getMessage()]);
+            Log::error('Event Update Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'message' => 'Update failed',
                 'error' => $e->getMessage(),
-                'errors' => $this->getValidationErrors($e)
+                'validation_errors' => $request->validator()->errors()->all()
             ], 422);
         }
-    }
-
-    private function getValidationErrors(\Exception $e)
-    {
-        if ($e instanceof ValidationException) {
-            return $e->errors();
-        }
-        return null;
     }
 
     /**

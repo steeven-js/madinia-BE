@@ -23,14 +23,49 @@ class UpdateEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firebaseId' => ['string', Rule::unique('events')->ignore($this->event)],
+            'firebaseId' => ['required', 'string'],
             'title' => ['required', 'string', 'max:255'],
-            'price' => ['nullable', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0'],
             'scheduled_date' => ['required', 'date'],
+            'status' => ['required', 'string', 'in:draft,pending,current,past,cancelled'],
             'is_active' => ['required', 'boolean'],
-            'status' => ['required', 'string', 'max:255'],
-            'stripe_event_id' => ['nullable', 'string'],
-            'stripe_price_id' => ['nullable', 'string']
+            'stripe_event_id' => ['required_with:price', 'nullable', 'string'],
+            'stripe_price_id' => ['required_with:price', 'nullable', 'string']
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array
+     */
+    public function messages(): array
+    {
+        return [
+            'firebaseId.required' => 'L\'ID Firebase est requis',
+            'title.required' => 'Le titre est requis',
+            'price.required' => 'Le prix est requis',
+            'scheduled_date.required' => 'La date est requise',
+            'status.required' => 'Le statut est requis',
+            'status.in' => 'Le statut doit être l\'un des suivants : draft, pending, current, past, cancelled',
+            'is_active.required' => 'Le statut actif est requis',
+            'stripe_event_id.required_with' => 'L\'ID Stripe est requis pour un événement payant',
+            'stripe_price_id.required_with' => 'L\'ID Prix Stripe est requis pour un événement payant'
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     *
+     * @return void
+     */
+    protected function prepareForValidation()
+    {
+        // Convertir la date au format approprié si nécessaire
+        if ($this->has('scheduled_date')) {
+            $this->merge([
+                'scheduled_date' => date('Y-m-d H:i:s', strtotime($this->scheduled_date))
+            ]);
+        }
     }
 }
