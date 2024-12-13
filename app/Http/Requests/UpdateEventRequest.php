@@ -25,6 +25,7 @@ class UpdateEventRequest extends FormRequest
         return [
             'firebaseId' => ['required', 'string'],
             'title' => ['required', 'string', 'max:255'],
+            'image_url' => ['nullable', 'string', 'url'],
             'price' => ['nullable', 'numeric', 'min:0'],
             'scheduled_date' => ['required', 'date'],
             'status' => ['required', 'string', 'in:draft,pending,current,past,cancelled'],
@@ -44,6 +45,7 @@ class UpdateEventRequest extends FormRequest
         return [
             'firebaseId.required' => 'L\'ID Firebase est requis',
             'title.required' => 'Le titre est requis',
+            'image_url.url' => 'L\'URL de l\'image doit être valide',
             'price.required' => 'Le prix est requis',
             'scheduled_date.required' => 'La date est requise',
             'status.required' => 'Le statut est requis',

@@ -18,6 +18,7 @@ class Event extends Model
         'firebaseId',
         'title',
         'price',
+        'image_url',
         'scheduled_date',
         'status',
         'is_active',

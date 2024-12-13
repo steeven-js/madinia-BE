@@ -24,9 +24,12 @@ class StoreEventRequest extends FormRequest
         return [
             'firebaseId' => ['required', 'string', 'unique:events,firebaseId'],
             'title' => ['required', 'string', 'max:255'],
-            'price' => ['nullable', 'numeric', 'min:0'], // Modifié
+            'image_url' => ['nullable', 'string', 'url'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'scheduled_date' => ['required', 'date'],
             'is_active' => ['boolean'],
+            'stripe_event_id' => ['nullable', 'string'],
+            'stripe_price_id' => ['nullable', 'string'],
             'status' => ['nullable', 'string', 'max:255'],
             'activated_at' => ['nullable', 'date']
         ];

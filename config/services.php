@@ -40,9 +40,16 @@ return [
     ],
 
     'stripe' => [
-        'secret' => env('STRIPE_SECRET'),
-        'public' => env('STRIPE_PUBLIC'),
-        'webhook' => env('STRIPE_WEBHOOK_SECRET'),
+        'live' => [
+            'secret' => env('STRIPE_SECRET'),
+            'public' => env('STRIPE_PUBLIC'),
+            'webhook' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+        'test' => [
+            'secret' => env('STRIPE_TEST_SECRET'),
+            'public' => env('STRIPE_TEST_KEY'),
+            'webhook' => env('STRIPE_TEST_WEBHOOK_SECRET'),
+        ],
     ],
 
     'bearer' => env('BEARER_TOKEN'),

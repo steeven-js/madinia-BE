@@ -2,37 +2,47 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Stripe\Price;
 use Stripe\Stripe;
 use Stripe\Product;
-use Stripe\Price;
+use Stripe\StripeClient;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Stripe\Exception\ApiErrorException;
 
 class StripeEventController extends Controller
 {
+    private StripeClient $stripeClient;
+
     public function __construct()
     {
-        Stripe::setApiKey(config('services.stripe.secret'));
+        Stripe::setApiKey(config('services.stripe.test.secret'));
+        $this->stripeClient = new StripeClient(config('services.stripe.test.secret'));
     }
 
-    public function createEvent(Request $request)
+    /**
+     * Create a new Stripe product with price
+     */
+    public function createEvent(Request $request): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string',  // Changé de 'name' à 'title'
-            'price' => 'required|numeric',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'imageUrl' => 'nullable|string'
         ]);
 
         try {
-            // Créer un produit Stripe
             $event = Product::create([
-                'name' => $request->title,  // Utilisation de title
+                'name' => $validated['title'],
                 'type' => 'service',
+                'images' => $validated['imageUrl'] ? [$validated['imageUrl']] : []
             ]);
 
-            // Créer un prix pour le produit
             $price = Price::create([
                 'product' => $event->id,
-                'unit_amount' => $request->price * 100, // Convertir en centimes
+                'unit_amount' => (int) ($validated['price'] * 100),
                 'currency' => 'eur',
             ]);
 
@@ -40,73 +50,128 @@ class StripeEventController extends Controller
                 'id' => $event->id,
                 'price_id' => $price->id,
                 'name' => $event->name,
-                'price' => $request->price,
-            ]);
-        } catch (\Exception $e) {
+                'price' => $validated['price'],
+                'imageUrl' => $validated['imageUrl'] ?? null,
+            ], 201);
+        } catch (ApiErrorException $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function updateEvent(Request $request, $id)
+    /**
+     * Update an existing Stripe product and its price
+     */
+    public function updateEvent(Request $request, string $id): JsonResponse
     {
-        $request->validate([
-            'title' => 'required|string',  // Changé de 'name' à 'title'
-            'price' => 'required|numeric',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'imageUrl' => 'nullable|string'
         ]);
 
         try {
-            $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+            $event = $this->stripeClient->products->update($id, [
+                'name' => $validated['title'],
+                'images' => $validated['imageUrl'] ? [$validated['imageUrl']] : []
+            ]);
 
-            // Mettre à jour le produit
-            $event = $stripe->products->update(
-                $id,
-                ['name' => $request->title]  // Utilisation de title
-            );
+            // Handle price update if needed
+            $prices = $this->stripeClient->prices->search([
+                'query' => "product:'$id' AND active:'true'",
+                'limit' => 1
+            ]);
 
-            // Récupérer le prix actuel
-            $prices = Price::all(['product' => $id]);
-            $currentPrice = $prices->data[0];
+            $priceId = null;
+            if (!empty($prices->data)) {
+                $currentPrice = $prices->data[0];
+                $newAmount = (int) ($validated['price'] * 100);
 
-            // Si le prix est différent, créer un nouveau prix
-            if ($currentPrice->unit_amount !== $request->price * 100) {
-                // Désactiver l'ancien prix
-                $stripe->prices->update($currentPrice->id, ['active' => false]);
-
-                // Créer le nouveau prix
-                $price = Price::create([
-                    'product' => $event->id,
-                    'unit_amount' => $request->price * 100,
-                    'currency' => 'eur'
-                ]);
+                if ($currentPrice->unit_amount !== $newAmount) {
+                    $this->stripeClient->prices->update($currentPrice->id, ['active' => false]);
+                    $newPrice = Price::create([
+                        'product' => $id,
+                        'unit_amount' => $newAmount,
+                        'currency' => 'eur'
+                    ]);
+                    $priceId = $newPrice->id;
+                } else {
+                    $priceId = $currentPrice->id;
+                }
             }
 
             return response()->json([
                 'id' => $event->id,
-                'price_id' => $price->id ?? $currentPrice->id,
+                'price_id' => $priceId,
                 'name' => $event->name,
-                'price' => $request->price
+                'price' => $validated['price'],
+                'imageUrl' => $validated['imageUrl'] ?? null,
             ]);
-        } catch (\Exception $e) {
+        } catch (ApiErrorException $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function deleteEvent($id)
+    /**
+     * Get a Stripe product by ID
+     */
+    public function getEvent(string $id): JsonResponse
     {
         try {
-            $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+            $event = $this->stripeClient->products->retrieve($id);
 
-            // Désactiver les prix
-            $prices = $stripe->prices->all(['product' => $id]);
-            foreach ($prices->data as $price) {
-                $stripe->prices->update($price->id, ['active' => false]);
-            }
+            // Get the active price
+            $prices = $this->stripeClient->prices->search([
+                'query' => "product:'$id' AND active:'true'",
+                'limit' => 1
+            ]);
 
-            // Archiver le produit
-            $stripe->products->update($id, ['active' => false]);
+            $price = !empty($prices->data) ? $prices->data[0]->unit_amount / 100 : null;
+            $priceId = !empty($prices->data) ? $prices->data[0]->id : null;
 
+            return response()->json([
+                'id' => $event->id,
+                'price_id' => $priceId,
+                'name' => $event->name,
+                'price' => $price,
+                'imageUrl' => !empty($event->images) ? $event->images[0] : null,
+            ]);
+        } catch (ApiErrorException $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a Stripe product
+     */
+    public function deleteEvent(string $id): JsonResponse
+    {
+        try {
+            $event = $this->stripeClient->products->delete($id);
             return response()->json(['success' => true]);
-        } catch (\Exception $e) {
+        } catch (ApiErrorException $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update product image
+     */
+    public function updateImage(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'imageUrl' => 'required|string'
+        ]);
+
+        try {
+            $event = $this->stripeClient->products->update($id, [
+                'images' => [$validated['imageUrl']]
+            ]);
+
+            return response()->json([
+                'id' => $event->id,
+                'imageUrl' => !empty($event->images) ? $event->images[0] : null,
+            ]);
+        } catch (ApiErrorException $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
