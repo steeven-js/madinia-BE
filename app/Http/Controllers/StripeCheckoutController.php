@@ -85,7 +85,7 @@ class StripeCheckoutController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->route('home')->with('error', 'Une erreur est survenue');
+            return redirect()->route('welcome')->with('error', 'Une erreur est survenue');
         }
     }
 
