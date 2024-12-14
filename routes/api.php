@@ -30,7 +30,6 @@ Route::get('/payment/success', [StripeCheckoutController::class, 'paymentSuccess
 
 // Checkout & Payment
 Route::controller(StripeCheckoutController::class)->group(function () {
-    Route::post('/create-checkout-session', 'createCheckoutSession');
     Route::get('/payment-cancel', function () {
         return redirect()->to('/events')->with('error', 'Paiement annulé');
     })->name('payment.cancel');
@@ -54,5 +53,13 @@ Route::middleware('authApi')->group(function () {
         Route::put('/update-event/{id}', [StripeEventController::class, 'updateEvent']);
         Route::post('/update-image/{id}', [StripeEventController::class, 'updateImage']);
         Route::delete('/delete-event/{id}', [StripeEventController::class, 'deleteEvent']);
+
+        // Checkout & Payment
+        Route::controller(StripeCheckoutController::class)->group(function () {
+            Route::post('/create-checkout-session', 'createCheckoutSession');
+            Route::get('/payment-cancel', function () {
+                return redirect()->to('/events')->with('error', 'Paiement annulé');
+            })->name('payment.cancel');
+        });
     });
 });
