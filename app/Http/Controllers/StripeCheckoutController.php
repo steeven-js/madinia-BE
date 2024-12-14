@@ -24,6 +24,8 @@ class StripeCheckoutController extends Controller
     public function createCheckoutSession(CreateCheckoutSessionRequest $request): JsonResponse
     {
         try {
+            $YOUR_DOMAIN = config('services.app.frontend_url');
+
             $event = Event::where('firebaseId', $request->eventId)->firstOrFail();
 
             $session = Session::create([
@@ -33,7 +35,7 @@ class StripeCheckoutController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => route('payment.success') . '?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => $YOUR_DOMAIN . '?success=true',
                 'cancel_url' => $request->returnUrl,
                 'metadata' => [
                     'event_id' => $event->id,
