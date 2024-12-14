@@ -18,7 +18,7 @@ class StripeCheckoutController extends Controller
 {
     public function __construct()
     {
-        Stripe::setApiKey(config('services.stripe.test.secret'));
+        Stripe::setApiKey(config('services.stripe.live.secret'));
     }
 
     public function createCheckoutSession(CreateCheckoutSessionRequest $request): JsonResponse
@@ -92,7 +92,7 @@ class StripeCheckoutController extends Controller
     public function handleWebhook()
     {
         // This is your Stripe CLI webhook secret for testing your endpoint locally.
-        $endpoint_secret = 'whsec_ce9754c33f567d983d5e3a939cf1c7ab4d6e0c3c289e910f11786aa7582c33a9';
+        $endpoint_secret = env(config('services.stripe.live.secret'));
 
         $payload = @file_get_contents('php://input');
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
