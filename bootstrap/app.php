@@ -16,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'authApi' => \App\Http\Middleware\AuthenticateApi::class,
         ]);
         $middleware->validateCsrfTokens(except: [
-            'stripe/webhook',
+            'webhook/stripe',
+            'api/webhook/stripe',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

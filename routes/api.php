@@ -21,7 +21,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-Route::post('/stripe/webhook', [StripeCheckoutController::class, 'handleWebhook']);
+Route::post('webhook/stripe', [StripeCheckoutController::class, 'handleWebhook'])
+    ->name('stripe.webhook')
+    ->middleware('authApi');
 
 // Protected Routes
 Route::middleware('authApi')->group(function () {

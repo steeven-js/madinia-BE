@@ -89,14 +89,12 @@ class StripeCheckoutController extends Controller
         }
     }
 
-    public function handleWebhook()
+    public function handleWebhook(Request $request)
     {
-        // This is your Stripe CLI webhook secret for testing your endpoint locally.
-        $endpoint_secret = env(config('services.stripe.test.secret'));
+        $endpoint_secret = config('services.stripe.test.webhook');
 
         $payload = @file_get_contents('php://input');
         $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-        $event = null;
 
         try {
             $event = \Stripe\Webhook::constructEvent(
@@ -105,30 +103,32 @@ class StripeCheckoutController extends Controller
                 $endpoint_secret
             );
         } catch (\UnexpectedValueException $e) {
-            // Invalid payload
-            return response('', 400);
+            Log::error('Webhook error while parsing basic request.', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            // Invalid signature
-            return response('', 400);
+            Log::error('Webhook signature verification failed.', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
 
         // Handle the event
         switch ($event->type) {
             case 'checkout.session.completed':
                 $session = $event->data->object;
-
-                // log de $session
                 Log::info('Session completed', [
                     'session_id' => $session->id,
-                    'customer_email' => $session->customer_email,
-                    'event_id' => $session->metadata->event_id,
-                    'firebase_id' => $session->metadata->firebase_id
+                    'customer_email' => $session->customer_details->email ?? null,
+                    'event_id' => $session->metadata->event_id ?? null,
+                    'firebase_id' => $session->metadata->firebase_id ?? null
                 ]);
-
+                break;
             default:
-                echo 'Received unknown event type ' . $event->type;
+                Log::info('Received unknown event type ' . $event->type);
         }
 
-        return response('');
+        return response()->json(['status' => 'success']);
     }
 }
