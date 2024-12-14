@@ -33,7 +33,7 @@ class StripeCheckoutController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => route('payment.success').'?session_id={CHECKOUT_SESSION_ID}',
+                'success_url' => route('payment.success') . '?session_id={CHECKOUT_SESSION_ID}',
                 'cancel_url' => $request->returnUrl,
                 'metadata' => [
                     'event_id' => $event->id,
@@ -125,145 +125,10 @@ class StripeCheckoutController extends Controller
                     'firebase_id' => $session->metadata->firebase_id
                 ]);
 
-                // $order = Order::where('session_id', $session->id)->first();
-                // if ($order && $order->status === 'unpaid') {
-                //     $order->status = 'paid';
-                //     $order->save();
-                //     // Send email to customer
-                // }
-
-                // ... handle other event types
             default:
                 echo 'Received unknown event type ' . $event->type;
         }
 
         return response('');
-    }
-
-    protected function verifyWebhookSignature(Request $request): mixed
-    {
-        $payload = $request->getContent();
-        $sigHeader = $request->header('Stripe-Signature');
-        $webhookSecret = config('services.stripe.webhook_secret');
-
-        if (empty($sigHeader)) {
-            throw new SignatureVerificationException('No signature header found');
-        }
-
-        return Webhook::constructEvent(
-            $payload,
-            $sigHeader,
-            $webhookSecret
-        );
-    }
-
-    protected function processStripeEvent($event): JsonResponse
-    {
-        return match ($event->type) {
-            'checkout.session.completed' => $this->handleCheckoutSessionCompleted($event),
-            'payment_intent.succeeded' => $this->handlePaymentIntentSucceeded($event),
-            'payment_intent.payment_failed' => $this->handlePaymentIntentFailed($event),
-            default => $this->handleUnknownEvent($event)
-        };
-    }
-
-    protected function handleCheckoutSessionCompleted($event): JsonResponse
-    {
-        $session = $event->data->object;
-
-        try {
-            $payment = EventPayment::create([
-                'event_id' => $session->metadata->event_id,
-                'stripe_payment_id' => $session->payment_intent,
-                'stripe_customer_id' => $session->customer,
-                'amount' => $session->amount_total / 100,
-                'currency' => $session->currency,
-                'status' => 'completed',
-                'payment_method_type' => $session->payment_method_types[0] ?? 'card',
-                'paid_at' => now(),
-                'metadata' => [
-                    'event_title' => $session->metadata->title ?? null,
-                    'customer_email' => $session->customer_details->email ?? null,
-                    'session_id' => $session->id,
-                    'firebase_id' => $session->metadata->firebase_id ?? null
-                ]
-            ]);
-
-            return response()->json(['status' => 'success', 'payment' => $payment]);
-        } catch (\Exception $e) {
-            Log::error('Checkout session processing failed', [
-                'session_id' => $session->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'error' => 'Checkout session processing failed',
-                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
-    }
-
-    protected function handlePaymentIntentSucceeded($event): JsonResponse
-    {
-        $paymentIntent = $event->data->object;
-
-        try {
-            $payment = EventPayment::where('stripe_payment_id', $paymentIntent->id)
-                ->update([
-                    'status' => 'completed',
-                    'metadata->payment_intent_status' => $paymentIntent->status
-                ]);
-
-            return response()->json(['status' => 'success', 'payment' => $payment]);
-        } catch (\Exception $e) {
-            Log::error('Payment intent success processing failed', [
-                'payment_intent_id' => $paymentIntent->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'error' => 'Payment intent processing failed',
-                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
-    }
-
-    protected function handlePaymentIntentFailed($event): JsonResponse
-    {
-        $paymentIntent = $event->data->object;
-
-        try {
-            $payment = EventPayment::where('stripe_payment_id', $paymentIntent->id)
-                ->update([
-                    'status' => 'failed',
-                    'metadata->failure_reason' => $paymentIntent->last_payment_error->message ?? null,
-                    'metadata->payment_intent_status' => $paymentIntent->status
-                ]);
-
-            return response()->json(['status' => 'success', 'payment' => $payment]);
-        } catch (\Exception $e) {
-            Log::error('Payment intent failure processing failed', [
-                'payment_intent_id' => $paymentIntent->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'error' => 'Payment failure processing failed',
-                'message' => config('app.debug') ? $e->getMessage() : 'An error occurred'
-            ], 500);
-        }
-    }
-
-    protected function handleUnknownEvent($event): JsonResponse
-    {
-        Log::info('Unhandled Stripe webhook event', [
-            'type' => $event->type,
-            'id' => $event->id
-        ]);
-
-        return response()->json(['status' => 'ignored', 'type' => $event->type]);
     }
 }
