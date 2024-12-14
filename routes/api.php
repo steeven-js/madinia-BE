@@ -21,6 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+Route::post('/stripe/webhook', [StripeCheckoutController::class, 'handleWebhook']);
+
 // Protected Routes
 Route::middleware('authApi')->group(function () {
     // Contact & Intercom Routes
