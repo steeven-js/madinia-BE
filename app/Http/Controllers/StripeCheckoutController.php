@@ -68,7 +68,7 @@ class StripeCheckoutController extends Controller
         $sessionId = $request->get('session_id');
 
         if (!$sessionId) {
-            return redirect()->route('home')->with('error', 'Session de paiement invalide');
+            return redirect()->route('welcome')->with('error', 'Session de paiement invalide');
         }
 
         try {
