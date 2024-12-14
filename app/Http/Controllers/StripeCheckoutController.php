@@ -34,6 +34,7 @@ class StripeCheckoutController extends Controller
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
+                'success_url' => 'https://madinia.fr/payment',
                 'cancel_url' => $request->returnUrl,
                 'metadata' => [
                     'event_id' => $event->id,
