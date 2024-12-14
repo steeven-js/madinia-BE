@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'app' => [
+        'frontend_url' => env('APP_URL_FRONT'),
+    ],
+
     'intercom' => [
         'secret_key' => env('INTERCOM_SECRET_KEY'),
     ],

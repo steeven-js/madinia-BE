@@ -23,12 +23,12 @@ class StripeCheckoutController extends Controller
             'priceId' => 'required|string',
             'title' => 'required|string',
             'price' => 'required|numeric',
+            'returnUrl' => 'required|string' // URL de retour ajoutée
         ]);
 
         try {
             $event = Event::where('firebaseId', $request->eventId)->firstOrFail();
 
-            // Simplification des lineItems pour n'utiliser que le price ID
             $session = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [[
@@ -37,7 +37,7 @@ class StripeCheckoutController extends Controller
                 ]],
                 'mode' => 'payment',
                 'success_url' => route('payment.success') . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('payment.cancel'),
+                'cancel_url' => $request->returnUrl, // Utilisation directe de l'URL de retour
                 'metadata' => [
                     'event_id' => $event->id,
                     'firebase_id' => $request->eventId
@@ -51,9 +51,7 @@ class StripeCheckoutController extends Controller
         } catch (\Exception $e) {
             Log::error('Stripe session creation error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all(),
-                'event' => isset($event) ? $event->toArray() : null
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -75,15 +73,20 @@ class StripeCheckoutController extends Controller
                 'paid_at' => now()
             ]);
 
-            return response()->json(['success' => true]);
+            // Rediriger vers la page de succès du frontend
+            return redirect()->away($this->getFrontendUrl() . '/payment/success');
 
         } catch (\Exception $e) {
             Log::error('Payment recording error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'session_id' => $request->session_id
+                'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => $e->getMessage()], 500);
+            return redirect()->away($this->getFrontendUrl() . '/payment/error');
         }
+    }
+
+    private function getFrontendUrl()
+    {
+        return config('app.frontend_url', 'http://localhost:3001');
     }
 }
