@@ -63,6 +63,32 @@ class StripeCheckoutController extends Controller
         }
     }
 
+    public function paymentSuccess(Request $request)
+    {
+        $sessionId = $request->get('session_id');
+
+        if (!$sessionId) {
+            return redirect()->route('home')->with('error', 'Session de paiement invalide');
+        }
+
+        try {
+            $session = Session::retrieve($sessionId);
+            $eventId = $session->metadata->firebase_id;
+
+            return view('payment.success', [
+                'session' => $session,
+                'eventId' => $eventId
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error retrieving payment session', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('home')->with('error', 'Une erreur est survenue');
+        }
+    }
+
     public function handleWebhook()
     {
         // This is your Stripe CLI webhook secret for testing your endpoint locally.
